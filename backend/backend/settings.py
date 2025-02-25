@@ -100,12 +100,8 @@ JAZZMIN_SETTINGS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Gov',
-        'USER': 'postgres', 
-        'PASSWORD': 'postgres',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'Gov.sqlite3'
     }
 }
 
