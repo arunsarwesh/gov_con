@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -100,8 +100,12 @@ JAZZMIN_SETTINGS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'Gov.sqlite3'
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',  # Database name
+        'USER': 'postgres.bgnwfdwiaqzdtseqcuwa',  # Your Supabase user
+        'PASSWORD': 'postgres',  # Replace with your Supabase password
+        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',  # Supabase host
+        'PORT': '6543',  # Supabase port
     }
 }
 
