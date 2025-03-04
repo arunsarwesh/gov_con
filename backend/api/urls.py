@@ -7,6 +7,8 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('form/', FormView.as_view(), name='form'),
+    path('form/<int:pk>/', FormView.as_view(), name='form_delete'),
+
 ]
 
 if settings.DEBUG:

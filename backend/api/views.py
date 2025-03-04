@@ -66,3 +66,15 @@ class FormView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        try:
+            if(pk == '000'):
+                forms = models.Form.objects.all()
+                forms.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            
+            form = models.Form.objects.get(pk=pk)
+        except models.Form.DoesNotExist:
+            return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
+        form.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
