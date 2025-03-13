@@ -52,10 +52,13 @@ class SignupView(APIView):
         # Store pending signup details for admin approval
         pending, created = models.PendingSignup.objects.get_or_create(
             email=email,
-            defaults={'details': str(request.data)}
+            name=request.data.get("name"),
+            College_Name=request.data.get("CollegeName"),
+            role=request.data.get("role"),
+            phone=request.data.get("phone"),
+            
         )
-        # Notify admin with signup details (admin email hardcoded here)
-        admin_email = 'admin@example.com'
+        admin_email = 'nithishkumarnk182005@gmail.com'
         send_mail(
             'New Signup Approval Needed',
             f'New signup request details: {request.data}',
