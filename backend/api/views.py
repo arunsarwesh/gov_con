@@ -13,6 +13,7 @@ import random
 import secrets
 from django.utils import timezone
 from datetime import timedelta
+import string
 
 
 class SignupOTPView(APIView):
@@ -99,7 +100,8 @@ class ApproveSignupView(APIView):
         pending.approved_at = timezone.now()
         pending.save()
 
-        strong_password = secrets.token_urlsafe(16)
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_"
+        strong_password = ''.join(secrets.choice(alphabet) for _ in range(20))
         user = User.objects.create_user(username=pending.email, email=pending.email, password=strong_password)
         user.first_name = pending.name
         user.college_name = pending.College_Name
