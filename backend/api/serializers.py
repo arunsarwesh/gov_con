@@ -8,3 +8,8 @@ class FormSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return models.Form.objects.create(**validated_data)
+    
+class PendingSignupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.PendingSignup
+        fields = '__all__'

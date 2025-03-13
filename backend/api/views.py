@@ -4,56 +4,106 @@ from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import FormSerializer
+from .serializers import *
 from . import models
 from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework.authtoken.models import Token  # our CustomTokenAuthentication works with this model
+import random
+import secrets
+from django.utils import timezone
 
-# Create your views here.
-def validate_otp(user, otp):
-    # Replace this with your real OTP verification logic.
-    # In production, compare with a stored/generated OTP.
-    return otp == "123456"
+
+class SignupOTPView(APIView):
+    def post(self, request, format=None):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            code = str(random.randint(100000, 999999))
+            models.SignupOTP.objects.create(email=email, code=code)
+
+            send_mail(
+                'Your Signup OTP',
+                f'Your OTP for signup is {code}',
+                settings.EMAIL_HOST_USER,
+                [email],
+                fail_silently=False,
+            )
+            
+            return Response({"message": "OTP sent to email."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            
+            return Response({"error": f"Failed to send OTP: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class SignupView(APIView):
     def post(self, request, format=None):
         email = request.data.get("email")
-        password = request.data.get("password")
-        if not email or not password:
-            return Response({"error": "email and password required"}, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(username=email).exists():
-            return Response({"error": "User with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
-        # Use email as the username.
-        user = User.objects.create_user(username=email, email=email, password=password)
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key}, status=status.HTTP_201_CREATED)
+        otp = request.data.get("otp")
+        if not email or not otp:
+            return Response({"error": "Email and OTP required"}, status=status.HTTP_400_BAD_REQUEST)
+        otp_entry = models.SignupOTP.objects.filter(email=email, code=otp).order_by('-created_at').first()
+        if not otp_entry:
+            return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+        otp_entry.delete()
+        # Store pending signup details for admin approval
+        pending, created = models.PendingSignup.objects.get_or_create(
+            email=email,
+            defaults={'details': str(request.data)}
+        )
+        # Notify admin with signup details (admin email hardcoded here)
+        admin_email = 'admin@example.com'
+        send_mail(
+            'New Signup Approval Needed',
+            f'New signup request details: {request.data}',
+            "sarweshwardeivasihamani@gmail.com",
+            [admin_email],
+            fail_silently=False,
+        )
+        return Response({"message": "Signup request submitted. Await admin approval."}, status=status.HTTP_200_OK)
+
+class ApproveSignupView(APIView):
+    def get(self, request):
+        pending = models.PendingSignup.objects.filter(is_approved=False)
+        serializer = PendingSignupSerializer(pending, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request, format=None):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email required"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            pending = models.PendingSignup.objects.get(email=email, is_approved=False)
+        except models.PendingSignup.DoesNotExist:
+            return Response({"error": "Pending signup not found"}, status=status.HTTP_404_NOT_FOUND)
+        pending.is_approved = True
+        pending.approved_at = timezone.now()
+        pending.save()
+        # Generate a very strong password
+        strong_password = secrets.token_urlsafe(16)
+        user = User.objects.create_user(username=email, email=email, password=strong_password)
+        send_mail(
+            'Your Account Has Been Approved',
+            f'Your account has been approved.\nUsername: {email}\nPassword: {strong_password}',
+            "sarweshwardeivasihamani@gmail.com",
+            [email],
+            fail_silently=False,
+        )
+        return Response({"message": "User approved and credentials sent."}, status=status.HTTP_200_OK)
 
 class LoginView(APIView):
     def post(self, request, format=None):
         username = request.data.get("username")
         password = request.data.get("password")
-        otp = request.data.get("otp")
         if not username or not password:
             return Response({"error": "username and password required"}, status=status.HTTP_400_BAD_REQUEST)
         user = authenticate(username=username, password=password)
         if user:
-            # If no OTP provided, generate and send OTP to the user's email.
-            if not otp:
-                generated_otp = "123456"  # For demo purposes. In production, generate a random OTP.
-                send_mail(
-                    'Your OTP Code',
-                    f'Your OTP code is {generated_otp}',
-                    'sarweshwardeivasihamani@gmail.com',
-                    [user.email],
-                    fail_silently=False,
-                )
-                return Response({"message": "OTP has been sent to your email."}, status=status.HTTP_200_OK)
-            else:
-                if not validate_otp(user, otp):
-                    return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
-                token, created = Token.objects.get_or_create(user=user)
-                return Response({"token": token.key}, status=status.HTTP_200_OK)
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({"token": token.key}, status=status.HTTP_200_OK)
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class FormView(APIView):
