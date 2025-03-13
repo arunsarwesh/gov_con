@@ -171,8 +171,8 @@ class FormView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        # Include request.FILES for file fields like pdf and project_details_attached
-        serializer = FormSerializer(data=request.data, files=request.FILES)
+        # Remove the "files" keyword argument and rely on request.data for both fields and files.
+        serializer = FormSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -183,22 +183,9 @@ class FormView(APIView):
             form = models.Form.objects.get(pk=pk)
         except models.Form.DoesNotExist:
             return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
-        # Allow partial updates and update file fields from request.FILES
-        serializer = FormSerializer(form, data=request.data, files=request.FILES, partial=True)
+        # Remove the "files" keyword argument here as well.
+        serializer = FormSerializer(form, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        try:
-            if pk == '000':
-                forms = models.Form.objects.all()
-                forms.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            form = models.Form.objects.get(pk=pk)
-        except models.Form.DoesNotExist:
-            return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
-        form.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    

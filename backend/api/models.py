@@ -23,7 +23,8 @@ class CustomUser(AbstractUser):
 
 
 class Form(models.Model):
-    sno = models.AutoField(primary_key=True)
+    # Change sno to a CharField and let it be generated based on department.
+    sno = models.CharField(max_length=20, primary_key=True, blank=True)
     guide_name = models.CharField(max_length=255)
     designation = models.CharField(max_length=255)
     department = models.CharField(max_length=255)
@@ -32,16 +33,33 @@ class Form(models.Model):
     institution_address = models.TextField()
     is_approved = models.BooleanField(default=False)
     # New fields based on form data
-    pdf = models.FileField(upload_to='forms/')
+    pdf = models.FileField(upload_to='forms/', null=True)
     project_title = models.CharField(max_length=255)
     student_details = models.JSONField()
     similar_project = models.TextField()
     course_studying = models.CharField(max_length=255)
-    project_details_attached = models.FileField(upload_to='project_details/')
+    project_details_attached = models.FileField(upload_to='project_details/', null=True)
     date = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return self.guide_name
+
+    def save(self, *args, **kwargs):
+        if not self.sno:
+            # Use department code in uppercase as prefix
+            prefix = self.department.upper().strip()
+            # Filter existing forms for this department (case-insensitive)
+            last_form = Form.objects.filter(department__iexact=self.department).order_by('sno').last()
+            if last_form:
+                try:
+                    last_number = int(last_form.sno.split('_')[1])
+                except (IndexError, ValueError):
+                    last_number = 0
+            else:
+                last_number = 0
+            next_number = last_number + 1
+            self.sno = f"{prefix}_{next_number:03d}"
+        super().save(*args, **kwargs)
 
 class SignupOTP(models.Model):
     email = models.EmailField()
