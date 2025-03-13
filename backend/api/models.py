@@ -1,7 +1,29 @@
+from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
-import django.utils.timezone as timezone
 
-# Create your models here.
+class CustomUser(AbstractUser):
+    college_name = models.CharField(max_length=500)
+    role = models.CharField(max_length=50)
+    phone = models.CharField(max_length=20)
+
+    # Override groups with a custom related_name.
+    groups = models.ManyToManyField(
+        Group,
+        related_name="customuser_set",  # Custom reverse accessor
+        blank=True,
+        help_text="The groups this user belongs to.",
+        verbose_name="groups"
+    )
+    
+    # Override user_permissions with a custom related_name.
+    user_permissions = models.ManyToManyField(
+        Permission,
+        related_name="customuser_set",  # Custom reverse accessor
+        blank=True,
+        help_text="Specific permissions for this user.",
+        verbose_name="user permissions"
+    )
+
 
 class Form(models.Model):
 	
