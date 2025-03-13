@@ -102,11 +102,11 @@ JAZZMIN_SETTINGS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',  # Database name
-        'USER': 'postgres.bgnwfdwiaqzdtseqcuwa',  # Your Supabase user
-        'PASSWORD': 'postgres',  # Replace with your Supabase password
-        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',  # Supabase host
-        'PORT': '6543',  # Supabase port
+        'NAME': 'postgres',  
+        'USER': 'postgres.bgnwfdwiaqzdtseqcuwa',  
+        'PASSWORD': 'postgres',  
+        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
+        'PORT': '6543', 
     }
 }
 

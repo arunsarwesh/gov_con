@@ -6,9 +6,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import FormSerializer
 from . import models
+from django.core.mail import send_mail
+from django.conf import settings
 from rest_framework.authtoken.models import Token  # our CustomTokenAuthentication works with this model
 
 # Create your views here.
+def validate_otp(user, otp):
+    # Replace this with your real OTP verification logic.
+    # In production, compare with a stored/generated OTP.
+    return otp == "123456"
 
 class SignupView(APIView):
     def post(self, request, format=None):
@@ -25,15 +31,29 @@ class SignupView(APIView):
 
 class LoginView(APIView):
     def post(self, request, format=None):
-        # Expecting the email to be provided in the "username" field as it's used as username.
         username = request.data.get("username")
         password = request.data.get("password")
+        otp = request.data.get("otp")
         if not username or not password:
             return Response({"error": "username and password required"}, status=status.HTTP_400_BAD_REQUEST)
         user = authenticate(username=username, password=password)
         if user:
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key}, status=status.HTTP_200_OK)
+            # If no OTP provided, generate and send OTP to the user's email.
+            if not otp:
+                generated_otp = "123456"  # For demo purposes. In production, generate a random OTP.
+                send_mail(
+                    'Your OTP Code',
+                    f'Your OTP code is {generated_otp}',
+                    'sarweshwardeivasihamani@gmail.com',
+                    [user.email],
+                    fail_silently=False,
+                )
+                return Response({"message": "OTP has been sent to your email."}, status=status.HTTP_200_OK)
+            else:
+                if not validate_otp(user, otp):
+                    return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({"token": token.key}, status=status.HTTP_200_OK)
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class FormView(APIView):
@@ -66,13 +86,13 @@ class FormView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     def delete(self, request, pk):
         try:
-            if(pk == '000'):
+            if pk == '000':
                 forms = models.Form.objects.all()
                 forms.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            
             form = models.Form.objects.get(pk=pk)
         except models.Form.DoesNotExist:
             return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
