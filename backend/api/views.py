@@ -120,8 +120,27 @@ class ApproveSignupView(APIView):
         # Remove the pending record once successfully migrated
         pending.delete()
         
-        return Response({"message": "User approved, credentials sent and pending data moved to auth user."}, 
-                        status=status.HTTP_200_OK)
+        return Response({"message": "User approved"}, status=status.HTTP_200_OK)
+    
+    def delete(self, request, format=None):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email required to deny signup"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            pending = models.PendingSignup.objects.get(email=email, is_approved=False)
+        except models.PendingSignup.DoesNotExist:
+            return Response({"error": "Pending signup not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        send_mail(
+            'Signup Request Denied',
+            'Your signup request has been denied by the administrator.',
+            "sarweshwardeivasihamani@gmail.com",
+            [pending.email],
+            fail_silently=False,
+        )
+        
+        pending.delete()
+        return Response({"message": "Pending signup request deleted"}, status=status.HTTP_200_OK)
 
 
 class LoginView(APIView):

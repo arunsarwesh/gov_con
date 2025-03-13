@@ -26,16 +26,23 @@ class CustomUser(AbstractUser):
 
 
 class Form(models.Model):
-	
-	guide_name = models.CharField(max_length=255)
-	designation = models.CharField(max_length=255)
-	department = models.CharField(max_length=255)
-	mobile_number = models.CharField(max_length=20)
-	email = models.EmailField()
-	institution_address = models.TextField()
-	
-	def __str__(self):
-		return self.guide_name
+    guide_name = models.CharField(max_length=255)
+    designation = models.CharField(max_length=255)
+    department = models.CharField(max_length=255)
+    mobile_number = models.CharField(max_length=20)
+    email = models.EmailField()
+    institution_address = models.TextField()
+
+    # New fields based on form data
+    pdf = models.FileField(upload_to='forms/', null=True, blank=True)
+    project_title = models.CharField(max_length=255, blank=True, null=True)
+    student_details = models.JSONField(blank=True, null=True)
+    similar_project = models.TextField(blank=True, null=True)
+    course_studying = models.CharField(max_length=255, blank=True, null=True)
+    project_details_attached = models.FileField(upload_to='project_details/', null=True, blank=True)
+    
+    def __str__(self):
+        return self.guide_name
 
 class SignupOTP(models.Model):
     email = models.EmailField()

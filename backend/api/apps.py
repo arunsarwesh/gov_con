@@ -11,6 +11,6 @@ class YourAppConfig(AppConfig):
         User = get_user_model()
         def create_default_admin(sender, **kwargs):
             if not User.objects.filter(username="admin").exists():
-                User.objects.create_superuser("admin", "admin@example.com", "Admin@123.in")
+                User.objects.create_superuser("admin", "sarweshwardeivasihamani@gmial.com", "Admin@123.in")
                 # print("Default admin user created: admin / Admin@123.in")
         post_migrate.connect(create_default_admin, sender=self)
