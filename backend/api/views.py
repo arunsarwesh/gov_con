@@ -46,7 +46,7 @@ class SignupView(APIView):
         email = request.data.get("email")
         otp = request.data.get("otp")
         name = request.data.get("name")
-        college_name = request.data.get("CollegeName")
+        college_name = request.data.get("collegeName")
         role = request.data.get("role")
         phone = request.data.get("phone")
         if not email or not otp:
@@ -155,7 +155,9 @@ class LoginView(APIView):
             return Response({"token": token.key}, status=status.HTTP_200_OK)
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
+
 class FormView(APIView):
+
     def get(self, request, pk=None):
         if pk:
             try:
@@ -169,7 +171,8 @@ class FormView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = FormSerializer(data=request.data)
+        # Include request.FILES for file fields like pdf and project_details_attached
+        serializer = FormSerializer(data=request.data, files=request.FILES)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -180,7 +183,8 @@ class FormView(APIView):
             form = models.Form.objects.get(pk=pk)
         except models.Form.DoesNotExist:
             return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FormSerializer(form, data=request.data, partial=True)
+        # Allow partial updates and update file fields from request.FILES
+        serializer = FormSerializer(form, data=request.data, files=request.FILES, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -197,3 +201,4 @@ class FormView(APIView):
             return Response({"error": "Form not found"}, status=status.HTTP_404_NOT_FOUND)
         form.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    

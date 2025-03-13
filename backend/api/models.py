@@ -5,8 +5,6 @@ class CustomUser(AbstractUser):
     college_name = models.CharField(max_length=500)
     role = models.CharField(max_length=50)
     phone = models.CharField(max_length=20)
-
-    # Override groups with a custom related_name.
     groups = models.ManyToManyField(
         Group,
         related_name="customuser_set",  # Custom reverse accessor
@@ -15,7 +13,6 @@ class CustomUser(AbstractUser):
         verbose_name="groups"
     )
     
-    # Override user_permissions with a custom related_name.
     user_permissions = models.ManyToManyField(
         Permission,
         related_name="customuser_set",  # Custom reverse accessor
@@ -26,21 +23,23 @@ class CustomUser(AbstractUser):
 
 
 class Form(models.Model):
+    sno = models.AutoField(primary_key=True)
     guide_name = models.CharField(max_length=255)
     designation = models.CharField(max_length=255)
     department = models.CharField(max_length=255)
     mobile_number = models.CharField(max_length=20)
     email = models.EmailField()
     institution_address = models.TextField()
-
+    is_approved = models.BooleanField(default=False)
     # New fields based on form data
-    pdf = models.FileField(upload_to='forms/', null=True, blank=True)
-    project_title = models.CharField(max_length=255, blank=True, null=True)
-    student_details = models.JSONField(blank=True, null=True)
-    similar_project = models.TextField(blank=True, null=True)
-    course_studying = models.CharField(max_length=255, blank=True, null=True)
-    project_details_attached = models.FileField(upload_to='project_details/', null=True, blank=True)
-    
+    pdf = models.FileField(upload_to='forms/')
+    project_title = models.CharField(max_length=255)
+    student_details = models.JSONField()
+    similar_project = models.TextField()
+    course_studying = models.CharField(max_length=255)
+    project_details_attached = models.FileField(upload_to='project_details/')
+    date = models.DateField(auto_now_add=True)
+
     def __str__(self):
         return self.guide_name
 
