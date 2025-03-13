@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token  # our CustomTokenAuthenticati
 import random
 import secrets
 from django.utils import timezone
+from datetime import timedelta
 
 
 class SignupOTPView(APIView):
@@ -26,7 +27,7 @@ class SignupOTPView(APIView):
 
             send_mail(
                 'Your Signup OTP',
-                f'Your OTP for signup is {code}',
+                f'Your OTP for signup is {code} \n Otp is valid for 5 minutes',
                 settings.EMAIL_HOST_USER,
                 [email],
                 fail_silently=False,
@@ -45,18 +46,26 @@ class SignupView(APIView):
         otp = request.data.get("otp")
         if not email or not otp:
             return Response({"error": "Email and OTP required"}, status=status.HTTP_400_BAD_REQUEST)
+            
         otp_entry = models.SignupOTP.objects.filter(email=email, code=otp).order_by('-created_at').first()
         if not otp_entry:
             return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Check if the OTP has expired (older than 5 minutes)
+        if timezone.now() - otp_entry.created_at > timedelta(minutes=5):
+            otp_entry.delete()
+            return Response({"error": "OTP has expired"}, status=status.HTTP_400_BAD_REQUEST)
+            
         otp_entry.delete()
-        # Store pending signup details for admin approval
+        # Store pending signup details for admin approval using defaults for additional data
         pending, created = models.PendingSignup.objects.get_or_create(
             email=email,
-            name=request.data.get("name"),
-            College_Name=request.data.get("CollegeName"),
-            role=request.data.get("role"),
-            phone=request.data.get("phone"),
-            
+            defaults={
+                "name": request.data.get("name"),
+                "College_Name": request.data.get("CollegeName"),
+                "role": request.data.get("role"),
+                "phone": request.data.get("phone")
+            }
         )
         admin_email = 'nithishkumarnk182005@gmail.com'
         send_mail(
