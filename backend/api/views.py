@@ -41,7 +41,7 @@ class SignupOTPView(APIView):
 
 
 class SignupView(APIView):
-    def post(self, request, format=None):
+    def post(self, request):
         email = request.data.get("email")
         otp = request.data.get("otp")
         name = request.data.get("name")
@@ -60,7 +60,7 @@ class SignupView(APIView):
             otp_entry.delete()
             return Response({"error": "OTP has expired"}, status=status.HTTP_400_BAD_REQUEST)
             
-        otp_entry.delete()
+   
         # Create or update pending signup details using the PendingSignup model
         pending, created = models.PendingSignup.objects.get_or_create(email=email)
         pending.name = name
@@ -77,6 +77,7 @@ class SignupView(APIView):
             [admin_email],
             fail_silently=False,
         )
+        otp_entry.delete()
         return Response({"message": "Signup request submitted. Await admin approval."}, status=status.HTTP_200_OK)
 
 class ApproveSignupView(APIView):
