@@ -97,7 +97,7 @@ class ApproveSignupView(APIView):
         pending.is_approved = True
         pending.approved_at = timezone.now()
         pending.save()
-        
+
         strong_password = secrets.token_urlsafe(16)
         user = User.objects.create_user(username=pending.email, email=pending.email, password=strong_password)
         user.first_name = pending.name
@@ -119,6 +119,7 @@ class ApproveSignupView(APIView):
         
         return Response({"message": "User approved, credentials sent and pending data moved to auth user."}, 
                         status=status.HTTP_200_OK)
+
 
 class LoginView(APIView):
     def post(self, request, format=None):
