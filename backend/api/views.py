@@ -189,3 +189,40 @@ class FormView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class Sno(APIView):
+    # Allowed static departments
+    ALLOWED_DEPTS = {"ECE", "CSE", "EEE", "MECH"}
+
+    def get(self, request):
+        """
+        GET: Return the next available sno for a given department.
+        Accepts the dept as a query parameter (?dept=YOUR_DEPT) or via request.data.
+        """
+        dept = request.query_params.get("dept") or request.data.get("dept")
+        if not dept:
+            return Response(
+                {"error": "Department (dept) parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        dept = dept.upper().strip()
+        if dept not in self.ALLOWED_DEPTS:
+            return Response(
+                {"error": f"Department must be one of: {', '.join(self.ALLOWED_DEPTS)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Query the last form for the provided department
+        last_form = models.Form.objects.filter(department__iexact=dept).order_by('-sno').first()
+        if last_form and last_form.sno:
+            try:
+                last_number = int(last_form.sno.split('_')[1])
+            except (IndexError, ValueError):
+                last_number = 0
+        else:
+            last_number = 0
+        
+        next_number = last_number + 1
+        new_sno = f"{dept}_{next_number:03d}"
+        return Response({"sno": new_sno})
